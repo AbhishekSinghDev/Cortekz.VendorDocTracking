@@ -1,5 +1,9 @@
 using Cortekz.VendorDocTracking.Api.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using MongoDB.Driver;
+
+MongoConventions.Register();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,7 +17,24 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Postgres")));
 
+builder.Services.Configure<MongoSettings>(builder.Configuration.GetSection("MongoSettings"));
+builder.Services.AddSingleton<IMongoClient>(_ =>
+    new MongoClient(builder.Configuration.GetConnectionString("Mongo")));
+builder.Services.AddSingleton(sp =>
+{
+    var client = sp.GetRequiredService<IMongoClient>();
+    var settings = sp.GetRequiredService<IOptions<MongoSettings>>().Value;
+    return client.GetDatabase(settings.DatabaseName);
+});
+builder.Services.AddSingleton<SubmissionRepository>();
+
 var app = builder.Build();
+
+using (var startupScope = app.Services.CreateScope())
+{
+    var submissionRepository = startupScope.ServiceProvider.GetRequiredService<SubmissionRepository>();
+    await submissionRepository.EnsureIndexesAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
