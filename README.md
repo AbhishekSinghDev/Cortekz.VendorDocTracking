@@ -75,12 +75,36 @@ No authentication or authorization anywhere.
 
 No protection against two people editing the same requirement at the same time.
 
-Creating a submission writes to Postgres first, then MongoDB. If the MongoDB write fails after the Postgres write already succeeded, there is no rollback. The vendor just resubmits and gets the next revision number.
+Creating a submission writes to Postgres first, then MongoDB. If the MongoDB write fails after the Postgres write already succeeded, there is no rollback. The requirement is left marked as submitted even though nothing was stored, so the vendor cannot send it again until a reviewer moves it.
 
 No automated tests in this pass. This was a deliberate choice to spend the available time on the API and the AI integration instead.
 
 The mock AI service is intentionally simple. It keeps jobs in memory only, with no persistence, and its verdicts are random rather than based on any real analysis.
 
+## What I would do differently with more time
+
+Write tests. This is the first thing I would go back and do. The services take everything through the constructor and return a result enum instead of throwing, so they are easy to test without spinning up a database.
+
+Fix the case where the Postgres write succeeds and the Mongo write fails. Right now the requirement is already marked as submitted, so the vendor cannot send it again. I would roll the requirement back to its old status before returning the error.
+
+Add auth. Every endpoint is open right now, and nothing records who actually made a review decision beyond a name in the request body.
+
+Make the background worker safe to run on more than one instance. Two copies of the API would both pick up the same job and start two AI reviews. Postgres has `FOR UPDATE SKIP LOCKED` for exactly this, I just did not get to it.
+
+Add a proper health endpoint that actually checks Postgres and Mongo instead of always returning healthy.
+
+## Time spent
+
+Around 11 hours in total. That is over the 4 to 6 hours in the brief, and the reason is that I was learning C# and .NET while building this. Roughly the first hour went on reading the brief and planning the schema and the endpoints, about five hours on Parts 1 and 2, and the rest on the mock AI service, the code review write up, and this README.
+
 ## A note on how this was built
 
-I am new to .NET and C#. I used AI assistance to speed up learning the framework and help in writing the code. The design decisions and trade offs described in this README are mine.
+I started learning C# and .NET a few hours before I started this. My background is backend work in Node.js and TypeScript, so most of the concepts carried over but the framework did not.
+
+A good part of this codebase was written with AI in the loop. I used it as a pair programmer. I decided the things that matter, the schema, where the Postgres and Mongo split should sit, how the worker should retry and back off, what each endpoint should return. Then I used AI to turn that into working C# faster than I could type it myself right now, and to explain the parts of the framework I had not seen before.
+
+I could have hand written more of it. Not in the time I had though, and not while picking up the language at the same time. So I put the time into getting the design right and understanding what the code actually does, instead of into typing it out.
+
+Things I picked up along the way: how dependency injection and the options pattern work in ASP.NET Core, EF Core entity configurations and migrations, the MongoDB C# driver with its filter and update builders, and how BackgroundService fits into the application lifecycle.
+
+The design decisions and trade offs in this README are mine.
