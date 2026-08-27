@@ -35,3 +35,17 @@ public enum AiReviewJobStatus
     Failed,
     Abandoned
 }
+
+public enum ReviewDecision
+{
+    Approved,
+    Rejected,
+    ResubmitRequired
+}
+
+public enum CommentSeverity
+{
+    Minor,
+    Major,
+    Critical
+}

@@ -26,6 +26,26 @@ public class CreateSubmissionResult
         new() { Outcome = outcome };
 }
 
+public enum RecordReviewOutcome
+{
+    Decided,
+    SubmissionNotFound,
+    AlreadyDecided,
+    IllegalTransition
+}
+
+public class RecordReviewResult
+{
+    public RecordReviewOutcome Outcome { get; init; }
+    public SubmissionResponse? Submission { get; init; }
+
+    public static RecordReviewResult Success(SubmissionResponse submission) =>
+        new() { Outcome = RecordReviewOutcome.Decided, Submission = submission };
+
+    public static RecordReviewResult Failure(RecordReviewOutcome outcome) =>
+        new() { Outcome = outcome };
+}
+
 public class SubmissionService
 {
     private readonly AppDbContext _db;
@@ -121,6 +141,54 @@ public class SubmissionService
         }
 
         return CreateSubmissionResult.Success(MapToResponse(document));
+    }
+
+    public async Task<RecordReviewResult> RecordReviewAsync(string submissionId, CreateReviewRequest request)
+    {
+        SubmissionDocument? submission;
+        try
+        {
+            submission = await _submissionRepository.GetByIdAsync(submissionId);
+        }
+        catch (FormatException)
+        {
+            return RecordReviewResult.Failure(RecordReviewOutcome.SubmissionNotFound);
+        }
+
+        if (submission is null)
+        {
+            return RecordReviewResult.Failure(RecordReviewOutcome.SubmissionNotFound);
+        }
+
+        if (submission.Review.Status != "Pending")
+        {
+            return RecordReviewResult.Failure(RecordReviewOutcome.AlreadyDecided);
+        }
+
+        var requirement = await _db.DocumentRequirements
+            .FirstOrDefaultAsync(r => r.Id == Guid.Parse(submission.RequirementId));
+
+        if (requirement is null || !requirement.CanReview())
+        {
+            return RecordReviewResult.Failure(RecordReviewOutcome.IllegalTransition);
+        }
+
+        var now = DateTime.UtcNow;
+        requirement.ApplyReviewDecision(request.Decision, now);
+        await _db.SaveChangesAsync();
+
+        var comment = new ReviewComment
+        {
+            Author = request.ReviewedBy,
+            Text = request.CommentText,
+            Severity = request.Severity.ToString(),
+            CreatedAt = now
+        };
+
+        await _submissionRepository.UpdateReviewAsync(submissionId, request.Decision.ToString(), request.ReviewedBy, comment);
+
+        var updated = await _submissionRepository.GetByIdAsync(submissionId);
+        return RecordReviewResult.Success(MapToResponse(updated!));
     }
 
     private static SubmissionResponse MapToResponse(SubmissionDocument document) => new()

@@ -25,4 +25,18 @@ public class DocumentRequirement
         LatestSubmissionId = submissionId;
         UpdatedAt = occurredAt;
     }
+
+    public bool CanReview() => Status is RequirementStatus.Submitted or RequirementStatus.UnderReview;
+
+    public void ApplyReviewDecision(ReviewDecision decision, DateTime occurredAt)
+    {
+        Status = decision switch
+        {
+            ReviewDecision.Approved => RequirementStatus.Approved,
+            ReviewDecision.Rejected => RequirementStatus.Rejected,
+            ReviewDecision.ResubmitRequired => RequirementStatus.ResubmitRequired,
+            _ => throw new ArgumentOutOfRangeException(nameof(decision), decision, null)
+        };
+        UpdatedAt = occurredAt;
+    }
 }
