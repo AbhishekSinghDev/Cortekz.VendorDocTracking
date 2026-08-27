@@ -7,4 +7,7 @@ public class LatestSubmissionSummaryResponse
     public DateTime SubmittedAt { get; set; }
     public string SubmittedBy { get; set; } = string.Empty;
     public string ReviewStatus { get; set; } = string.Empty;
+    public string AiStatus { get; set; } = string.Empty;
+    public string? AiVerdict { get; set; }
+    public int AiFlaggedIssueCount { get; set; }
 }

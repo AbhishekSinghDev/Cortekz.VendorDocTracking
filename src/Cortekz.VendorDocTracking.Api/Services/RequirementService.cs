@@ -114,7 +114,10 @@ public class RequirementService
                 Revision = submission.Revision,
                 SubmittedAt = submission.SubmittedAt,
                 SubmittedBy = submission.SubmittedBy,
-                ReviewStatus = submission.Review.Status
+                ReviewStatus = submission.Review.Status,
+                AiStatus = submission.AiReview.Status,
+                AiVerdict = submission.AiReview.Verdict,
+                AiFlaggedIssueCount = submission.AiReview.FlaggedIssues.Count
             };
         }
 
