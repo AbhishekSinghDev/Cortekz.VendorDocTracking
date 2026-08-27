@@ -33,4 +33,18 @@ public class RequirementsController : ControllerBase
             _ => Problem()
         };
     }
+
+    [HttpGet("{requirementId:guid}/submissions")]
+    public async Task<IActionResult> GetSubmissionHistory(Guid requirementId)
+    {
+        var result = await _submissionService.GetHistoryAsync(requirementId);
+
+        return result.Outcome switch
+        {
+            GetHistoryOutcome.Success => Ok(result.Submissions),
+            GetHistoryOutcome.RequirementNotFound =>
+                NotFound(new { message = $"Requirement '{requirementId}' does not exist." }),
+            _ => Problem()
+        };
+    }
 }

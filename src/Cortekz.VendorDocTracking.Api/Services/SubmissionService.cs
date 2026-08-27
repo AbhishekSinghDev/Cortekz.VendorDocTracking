@@ -46,6 +46,24 @@ public class RecordReviewResult
         new() { Outcome = outcome };
 }
 
+public enum GetHistoryOutcome
+{
+    Success,
+    RequirementNotFound
+}
+
+public class GetHistoryResult
+{
+    public GetHistoryOutcome Outcome { get; init; }
+    public List<SubmissionResponse>? Submissions { get; init; }
+
+    public static GetHistoryResult Success(List<SubmissionResponse> submissions) =>
+        new() { Outcome = GetHistoryOutcome.Success, Submissions = submissions };
+
+    public static GetHistoryResult NotFound() =>
+        new() { Outcome = GetHistoryOutcome.RequirementNotFound };
+}
+
 public class SubmissionService
 {
     private readonly AppDbContext _db;
@@ -189,6 +207,18 @@ public class SubmissionService
 
         var updated = await _submissionRepository.GetByIdAsync(submissionId);
         return RecordReviewResult.Success(MapToResponse(updated!));
+    }
+
+    public async Task<GetHistoryResult> GetHistoryAsync(Guid requirementId)
+    {
+        var requirementExists = await _db.DocumentRequirements.AnyAsync(r => r.Id == requirementId);
+        if (!requirementExists)
+        {
+            return GetHistoryResult.NotFound();
+        }
+
+        var submissions = await _submissionRepository.GetHistoryAsync(requirementId.ToString());
+        return GetHistoryResult.Success(submissions.Select(MapToResponse).ToList());
     }
 
     private static SubmissionResponse MapToResponse(SubmissionDocument document) => new()
