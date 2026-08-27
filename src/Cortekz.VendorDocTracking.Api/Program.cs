@@ -32,6 +32,7 @@ builder.Services.AddSingleton(sp =>
 builder.Services.AddSingleton<SubmissionRepository>();
 builder.Services.AddScoped<PurchaseOrderService>();
 builder.Services.AddScoped<RequirementService>();
+builder.Services.AddScoped<SubmissionService>();
 
 var app = builder.Build();
 

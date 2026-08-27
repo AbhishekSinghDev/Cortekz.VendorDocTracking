@@ -15,4 +15,14 @@ public class DocumentRequirement
     public DateTime UpdatedAt { get; set; }
 
     public PurchaseOrder PurchaseOrder { get; set; } = null!;
+
+    public bool CanAcceptSubmission() => Status is RequirementStatus.Pending or RequirementStatus.ResubmitRequired;
+
+    public void RecordSubmission(string submissionId, DateTime occurredAt)
+    {
+        CurrentRevision += 1;
+        Status = RequirementStatus.Submitted;
+        LatestSubmissionId = submissionId;
+        UpdatedAt = occurredAt;
+    }
 }
