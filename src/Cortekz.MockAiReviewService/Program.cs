@@ -1,9 +1,17 @@
+using Cortekz.MockAiReviewService.Configuration;
+using Cortekz.MockAiReviewService.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.Configure<MockAiSettings>(builder.Configuration.GetSection("MockAiSettings"));
+builder.Services.AddSingleton<ReviewJobStore>();
+builder.Services.AddScoped<ReviewJobService>();
 
 var app = builder.Build();
 
@@ -16,7 +24,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Endpoints land in Phase 9 (mock AI review service).
-app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+app.MapControllers();
 
 app.Run();

@@ -33,6 +33,18 @@ services:
       timeout: 5s
       retries: 5
 
+  mock-ai-review:
+    build:
+      context: ./src/Cortekz.MockAiReviewService
+    container_name: cortekz-mock-ai-review
+    restart: unless-stopped
+    environment:
+      MockAiSettings__QueuedDurationSeconds: "2"
+      MockAiSettings__ProcessingDurationSeconds: "5"
+      MockAiSettings__FailureRate: "0.2"
+    ports:
+      - "5090:8080"
+
 volumes:
   postgres-data:
   mongo-data:
