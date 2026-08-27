@@ -9,10 +9,12 @@ namespace Cortekz.VendorDocTracking.Api.Controllers;
 public class PurchaseOrdersController : ControllerBase
 {
     private readonly PurchaseOrderService _purchaseOrderService;
+    private readonly RequirementService _requirementService;
 
-    public PurchaseOrdersController(PurchaseOrderService purchaseOrderService)
+    public PurchaseOrdersController(PurchaseOrderService purchaseOrderService, RequirementService requirementService)
     {
         _purchaseOrderService = purchaseOrderService;
+        _requirementService = requirementService;
     }
 
     [HttpPost]
@@ -28,6 +30,20 @@ public class PurchaseOrdersController : ControllerBase
                 NotFound(new { message = $"Vendor '{request.VendorId}' does not exist." }),
             CreatePurchaseOrderOutcome.DuplicatePoNumber =>
                 Conflict(new { message = $"PO number '{request.PoNumber}' is already in use." }),
+            _ => Problem()
+        };
+    }
+
+    [HttpGet("{id:guid}/requirements")]
+    public async Task<IActionResult> ListRequirements(Guid id, [FromQuery] RequirementListQuery query)
+    {
+        var result = await _requirementService.ListAsync(id, query);
+
+        return result.Outcome switch
+        {
+            ListRequirementsOutcome.Success => Ok(result.Data),
+            ListRequirementsOutcome.PurchaseOrderNotFound =>
+                NotFound(new { message = $"Purchase order '{id}' does not exist." }),
             _ => Problem()
         };
     }

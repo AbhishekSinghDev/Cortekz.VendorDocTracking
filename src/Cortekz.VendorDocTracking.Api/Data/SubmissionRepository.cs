@@ -40,6 +40,18 @@ public class SubmissionRepository
         return _collection.Find(filter).FirstOrDefaultAsync()!;
     }
 
+    public Task<List<SubmissionDocument>> GetByIdsAsync(IEnumerable<string> ids)
+    {
+        var objectIds = ids.Select(ObjectId.Parse).ToList();
+        if (objectIds.Count == 0)
+        {
+            return Task.FromResult(new List<SubmissionDocument>());
+        }
+
+        var filter = Builders<SubmissionDocument>.Filter.In(s => s.Id, objectIds);
+        return _collection.Find(filter).ToListAsync();
+    }
+
     public Task<List<SubmissionDocument>> GetHistoryAsync(string requirementId)
     {
         var filter = Builders<SubmissionDocument>.Filter.Eq(s => s.RequirementId, requirementId);
