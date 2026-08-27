@@ -1,0 +1,6 @@
+@Cortekz.MockAiReviewService_HostAddress = http://localhost:5073
+
+GET {{Cortekz.MockAiReviewService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

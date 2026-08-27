@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: cortekz-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cortekz
+      POSTGRES_PASSWORD: cortekz
+      POSTGRES_DB: vendor_doc_tracking
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cortekz -d vendor_doc_tracking"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mongo:
+    image: mongo:7
+    container_name: cortekz-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: vendor_doc_tracking
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:
+  mongo-data:

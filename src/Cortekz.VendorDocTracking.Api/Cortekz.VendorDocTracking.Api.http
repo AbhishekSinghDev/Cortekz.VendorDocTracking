@@ -1,0 +1,6 @@
+@Cortekz.VendorDocTracking.Api_HostAddress = http://localhost:5207
+
+GET {{Cortekz.VendorDocTracking.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
