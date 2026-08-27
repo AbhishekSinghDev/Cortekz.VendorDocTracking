@@ -34,6 +34,18 @@ builder.Services.AddScoped<PurchaseOrderService>();
 builder.Services.AddScoped<RequirementService>();
 builder.Services.AddScoped<SubmissionService>();
 
+builder.Services.Configure<AiReviewWorkerSettings>(builder.Configuration.GetSection("AiReviewWorker"));
+builder.Services.AddHttpClient<IAiReviewClient, AiReviewClient>((sp, client) =>
+{
+    var baseUrl = builder.Configuration["AiReviewService:BaseUrl"]
+        ?? throw new InvalidOperationException("AiReviewService:BaseUrl is not configured.");
+    client.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
+
+    var workerSettings = sp.GetRequiredService<IOptions<AiReviewWorkerSettings>>().Value;
+    client.Timeout = TimeSpan.FromSeconds(workerSettings.RequestTimeoutSeconds);
+});
+builder.Services.AddHostedService<AiReviewJobWorker>();
+
 var app = builder.Build();
 
 using (var startupScope = app.Services.CreateScope())
